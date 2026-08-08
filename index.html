@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>황금키워드 자동 채굴기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#17140F; --bg-surface:#211C15; --bg-surface-2:#2A241B;
+    --line:#3A3225; --gold:#D9A94D; --gold-dim:#8C7238; --teal:#4FA893;
+    --stone:#6B6255; --stone-dim:#4A443A; --rust:#B0603F;
+    --text:#F1E9D8; --text-muted:#A79B87; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-base); color:var(--text);
+    font-family:'Noto Sans KR', -apple-system, sans-serif;
+    line-height:1.5; padding:28px 16px 60px; min-height:100vh;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  header{margin-bottom:20px;}
+  .eyebrow{font-family:'IBM Plex Mono', monospace;font-size:12px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;margin-bottom:8px;}
+  h1{font-family:'Gowun Batang', serif;font-weight:700;font-size:clamp(22px,5vw,30px);margin:0 0 10px;}
+  .sub{color:var(--text-muted);font-size:14px;max-width:58ch;}
+  .strata{width:100%;height:14px;margin:18px 0 24px;opacity:.9;}
+
+  .search-card{background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:20px;}
+  .search-row{display:flex;gap:8px;}
+  input[type=text]{flex:1;background:var(--bg-surface-2);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:7px;font-size:15px;font-family:inherit;}
+  input[type=text]:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+  input:disabled{opacity:.5;}
+  .btn-primary{background:var(--gold);color:#1C1610;border:none;border-radius:7px;padding:0 20px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;}
+  .btn-primary:hover:not(:disabled){background:#e8bb62;}
+  .btn-primary:disabled{opacity:.55;cursor:default;}
+
+  .history{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+  .hist-chip{background:var(--bg-surface-2);border:1px solid var(--line);color:var(--text-muted);font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer;}
+  .hist-chip:hover{border-color:var(--gold);color:var(--gold);}
+
+  .loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-muted);margin:16px 0;}
+  .spinner{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--teal);animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion: reduce){.spinner{animation:none;}}
+
+  .error-box{margin:16px 0;padding:12px 14px;border-radius:8px;background:rgba(176,96,63,.14);border:1px solid var(--rust);color:var(--text);font-size:13px;}
+  .info-box{margin:16px 0;padding:10px 14px;border-radius:8px;background:rgba(217,169,77,.1);border:1px solid var(--gold-dim);color:var(--text-muted);font-size:12.5px;}
+
+  .pick-box{background:rgba(79,168,147,.1);border:1px solid var(--teal);border-radius:9px;padding:16px;margin:18px 0;}
+  .pick-box .tag{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--teal);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+  .pick-box .kw{font-size:19px;font-weight:700;margin-bottom:8px;}
+  .pick-nums{display:flex;gap:18px;flex-wrap:wrap;font-family:'IBM Plex Mono', monospace;font-size:12.5px;color:var(--text-muted);}
+  .pick-nums b{color:var(--text);font-size:14px;}
+
+  .tabs{display:flex;gap:6px;margin:20px 0 12px;}
+  .tab-btn{background:var(--bg-surface-2);border:1px solid var(--line);color:var(--text-muted);padding:7px 14px;border-radius:7px;font-size:13px;cursor:pointer;}
+  .tab-btn.active{background:var(--gold);color:#1C1610;border-color:var(--gold);font-weight:600;}
+
+  .rows{display:flex;flex-direction:column;gap:8px;}
+  .row{background:var(--bg-surface);border:1px solid var(--line);border-radius:9px;padding:12px 14px;}
+  .row-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;}
+  .row-kw{font-size:14.5px;font-weight:600;}
+  .row-status{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;font-family:'IBM Plex Mono', monospace;white-space:nowrap;}
+
+  .gauge{position:relative;height:10px;border-radius:4px;background:var(--gold);overflow:hidden;margin-bottom:6px;}
+  .gauge .cover{position:absolute;top:0;left:0;bottom:0;background:var(--stone);}
+  .gauge.empty{background:repeating-linear-gradient(135deg,var(--bg-surface-2),var(--bg-surface-2) 6px,var(--line) 6px,var(--line) 12px);}
+
+  .row-nums{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-muted);font-family:'IBM Plex Mono', monospace;}
+
+  .empty-state{text-align:center;color:var(--text-muted);padding:40px 10px;font-size:13.5px;}
+  footer{margin-top:26px;font-size:11.5px;color:var(--text-muted);text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">⛏ Golden Keyword Auto Miner</div>
+    <h1>황금키워드 자동 채굴기</h1>
+    <p class="sub">키워드 하나만 넣으면 네이버 검색광고 API·오픈API로 실제 검색량과 문서수를 조회해서, 진짜 틈새를 순위대로 보여줘요. 전부 실시간 자동 조회예요.</p>
+  </header>
+
+  <svg class="strata" viewBox="0 0 400 14" preserveAspectRatio="none">
+    <rect width="400" height="14" fill="#2A241B"/>
+    <path d="M0,6 Q40,2 80,6 T160,6 T240,5 T320,7 T400,5 V14 H0 Z" fill="#3A3225"/>
+    <path d="M0,10 Q60,8 120,10 T240,9 T400,10 V14 H0 Z" fill="#4A443A"/>
+  </svg>
+
+  <div class="search-card">
+    <div class="search-row">
+      <input type="text" id="kw-input" placeholder="예: 열사병 증상" onkeydown="if(event.key==='Enter')run()">
+      <button class="btn-primary" id="run-btn" onclick="run()">자동 조회</button>
+    </div>
+    <div class="history" id="history"></div>
+  </div>
+
+  <div id="loading" class="loading" style="display:none;">
+    <span class="spinner"></span>
+    <span>네이버 API로 실시간 조회 중이에요…</span>
+  </div>
+
+  <div id="error" class="error-box" style="display:none;"></div>
+
+  <div id="result" style="display:none;">
+    <div id="pick"></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-niche" onclick="switchTab('niche')">틈새순</button>
+      <button class="tab-btn" id="tab-volume" onclick="switchTab('volume')">검색량순</button>
+    </div>
+    <div class="rows" id="rows"></div>
+  </div>
+
+  <footer>네이버 검색광고 API · 오픈API 블로그검색 기반 실시간 조회</footer>
+</div>
+
+<script>
+let currentData = null;
+let currentTab = 'niche';
+
+function loadHistory(){
+  try{
+    const h = JSON.parse(localStorage.getItem('gkm-history') || '[]');
+    const box = document.getElementById('history');
+    box.innerHTML = h.map(k => `<span class="hist-chip" onclick="quickRun('${escapeAttr(k)}')">${escapeHtml(k)}</span>`).join('');
+  }catch(e){}
+}
+function saveHistory(keyword){
+  try{
+    let h = JSON.parse(localStorage.getItem('gkm-history') || '[]');
+    h = [keyword, ...h.filter(k => k !== keyword)].slice(0, 8);
+    localStorage.setItem('gkm-history', JSON.stringify(h));
+    loadHistory();
+  }catch(e){}
+}
+function quickRun(keyword){
+  document.getElementById('kw-input').value = keyword;
+  run();
+}
+
+async function run(){
+  const input = document.getElementById('kw-input');
+  const keyword = input.value.trim();
+  if(!keyword){ input.focus(); return; }
+
+  const btn = document.getElementById('run-btn');
+  const loading = document.getElementById('loading');
+  const errorBox = document.getElementById('error');
+  const result = document.getElementById('result');
+
+  btn.disabled = true; input.disabled = true;
+  loading.style.display = 'flex';
+  errorBox.style.display = 'none';
+  result.style.display = 'none';
+
+  try{
+    const res = await fetch(`/api/research?keyword=${encodeURIComponent(keyword)}`);
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || '조회에 실패했어요.');
+    currentData = data;
+    saveHistory(keyword);
+    renderResult(data);
+    result.style.display = 'block';
+  }catch(e){
+    errorBox.className = 'error-box';
+    errorBox.textContent = e.message || '조회 중 오류가 발생했어요.';
+    errorBox.style.display = 'block';
+  }finally{
+    btn.disabled = false; input.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.getElementById('tab-niche').classList.toggle('active', tab === 'niche');
+  document.getElementById('tab-volume').classList.toggle('active', tab === 'volume');
+  if(currentData) renderRows(currentData);
+}
+
+function renderResult(data){
+  const pickBox = document.getElementById('pick');
+  const errorBox = document.getElementById('error');
+  if (data.docApiEnabled === false) {
+    errorBox.className = 'info-box';
+    errorBox.style.display = 'block';
+    errorBox.textContent = '문서수 자동조회는 아직 연결 안 됐어요 — 지금은 검색량 기준으로 정렬 중이에요. (오픈API 키를 나중에 추가하면 자동으로 틈새 비율까지 켜져요)';
+  } else {
+    errorBox.className = 'error-box';
+  }
+  if(data.recommended){
+    const r = data.recommended;
+    pickBox.innerHTML = `
+      <div class="pick-box">
+        <div class="tag">⛏ 추천 틈새</div>
+        <div class="kw">${escapeHtml(r.keyword)}</div>
+        <div class="pick-nums">
+          <span>검색량 <b>${r.volume.toLocaleString()}</b>/월</span>
+          <span>문서수 <b>${r.docs !== null ? r.docs.toLocaleString() : '—'}</b></span>
+          <span>비율 <b>${r.ratio !== null ? r.ratio.toFixed(2) : '—'}</b></span>
+          <span>${r.status}</span>
+        </div>
+      </div>
+    `;
+  } else {
+    pickBox.innerHTML = `<div class="empty-state">${escapeHtml(data.note || '추천할 만한 결과를 찾지 못했어요.')}</div>`;
+  }
+  renderRows(data);
+}
+
+function renderRows(data){
+  const list = currentTab === 'niche' ? data.byNiche : data.byVolume;
+  const container = document.getElementById('rows');
+  if(!list || !list.length){
+    container.innerHTML = '<div class="empty-state">표시할 데이터가 없어요.</div>';
+    return;
+  }
+  const maxVolume = Math.max(...list.map(k => k.volume), 1);
+  container.innerHTML = list.map(k => {
+    const ratio = k.ratio;
+    const cover = ratio === null ? 0 : Math.min(ratio * 100, 100);
+    const st = statusColor(k.status);
+    return `
+      <div class="row">
+        <div class="row-top">
+          <span class="row-kw">${escapeHtml(k.keyword)}</span>
+          <span class="row-status" style="color:${st.color};background:${st.bg}">${k.status}</span>
+        </div>
+        <div class="gauge${ratio === null ? ' empty' : ''}">
+          ${ratio !== null ? `<div class="cover" style="width:${cover}%"></div>` : ''}
+        </div>
+        <div class="row-nums">
+          <span>검색량 ${k.volume.toLocaleString()}/월 (PC ${k.pc.toLocaleString()} · 모바일 ${k.mobile.toLocaleString()})</span>
+          <span>문서수 ${k.docs !== null ? k.docs.toLocaleString() : '—'}</span>
+          ${k.compIdx ? `<span>광고경쟁 ${k.compIdx}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function statusColor(label){
+  if(label === '매우 좋음') return { color:'var(--teal)', bg:'rgba(79,168,147,.16)' };
+  if(label === '좋음') return { color:'var(--gold)', bg:'rgba(217,169,77,.14)' };
+  if(label === '보통') return { color:'var(--stone)', bg:'rgba(107,98,85,.16)' };
+  if(label === '경쟁 심함') return { color:'var(--rust)', bg:'rgba(176,96,63,.16)' };
+  return { color:'var(--stone-dim)', bg:'rgba(107,98,85,.18)' };
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escapeAttr(s){
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+loadHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "golden-keyword-miner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "네이버 검색광고 API + 오픈API로 실제 검색량·문서수를 자동 조회하는 황금키워드 채굴 사이트",
+  "engines": { "node": ">=18" }
+}
