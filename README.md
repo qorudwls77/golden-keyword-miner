@@ -38,3 +38,4 @@ Vercel 프로젝트 → Settings → Environment Variables 에서 언제든 수�
 
 - `index.html` — 검색창 + 결과 화면 (프론트엔드)
 - `api/research.js` — 실제 API 호출 + 틈새 지수 계산 (서버리스 함수, 키는 여기서만 사용되고 브라우저에는 노출되지 않아요)
+
