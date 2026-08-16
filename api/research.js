@@ -30,8 +30,11 @@ async function fetchAutocomplete(keyword) {
                   'Referer': 'https://search.naver.com/'
             }
       });
+const bodyText = await res.text();
+      global.__lastAC = { status: res.status, ok: res.ok, body: bodyText.slice(0, 400) };
       if (!res.ok) return [];
-      const data = await res.json();
+      let data;
+      try { data = JSON.parse(bodyText); } catch (e) { return []; }
       const list = (data.items && data.items[0]) ? data.items[0] : [];
       return list
       .map(item => Array.isArray(item) ? item[0] : item)
@@ -118,7 +121,7 @@ module.exports = async (req, res) => {
             const suggestions = await fetchAutocomplete(keyword);
 
       if (!suggestions.length) {
-            res.status(200).json({ keyword, recommended: null, byNiche: [], byVolume: [], docApiEnabled: hasDocApi, note: '연관검색어를 찾지 못했어요. 다른 표현으로 시도해보세요.' });
+            res.status(200).json({ keyword, recommended: null, byNiche: [], byVolume: [], docApiEnabled: hasDocApi, note: '연관검색어를 찾지 못했어요. 다른 표현으로 시도해보세요.', debug: global.__lastAC });
             return;
       }
 
