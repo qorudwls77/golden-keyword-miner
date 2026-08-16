@@ -138,9 +138,10 @@ module.exports = async (req, res) => {
             return;
       }
 
-      const volumeData = await fetchVolumeForKeywords(suggestions);
+      const allKeywords = [keyword, ...suggestions];
+                  const volumeData = await fetchVolumeForKeywords(allKeywords);
             const normalizeKey = s => String(s).replace(/\s+/g, '').toLowerCase();
-            const rel = suggestions.map(sug => {
+            const rel = allKeywords.map(sug => {
                   const match = volumeData.find(v => normalizeKey(v.relKeyword) === normalizeKey(sug));
                   return match || { relKeyword: sug, monthlyPcQcCnt: 0, monthlyMobileQcCnt: 0, compIdx: null };
             });
