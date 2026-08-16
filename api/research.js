@@ -45,26 +45,28 @@ const bodyText = await res.text();
 // 검색광고 API로 특정 키워드들의 정확한 검색량을 가져온다 (최대 5개씩 묶어서 조회).
 async function fetchVolumeForKeywords(keywords) {
       const results = [];
-      for (let i = 0; i < keywords.length; i += 5) {
-            const chunk = keywords.slice(i, i + 5);
+      for (let i = 0; i < keywords.length; i++) {
+            const kw = keywords[i];
             const timestamp = Date.now().toString();
             const method = 'GET';
             const path = '/keywordstool';
             const signature = sign(timestamp, method, path, process.env.NAVER_AD_SECRET_KEY);
-            const url = `https://api.naver.com${path}?hintKeywords=${chunk.map(k => encodeURIComponent(k)).join(',')}&showDetail=1`;
+            const url = `https://api.naver.com${path}?hintKeywords=${encodeURIComponent(kw)}&showDetail=1`;
 
-      const res = await fetch(url, {
-            headers: {
-                  'X-Timestamp': timestamp,
-                  'X-API-KEY': process.env.NAVER_AD_API_KEY,
-                  'X-Customer': process.env.NAVER_AD_CUSTOMER_ID,
-                  'X-Signature': signature
-            }
-      });
+            const res = await fetch(url, {
+                  headers: {
+                        'X-Timestamp': timestamp,
+                        'X-API-KEY': process.env.NAVER_AD_API_KEY,
+                        'X-Customer': process.env.NAVER_AD_CUSTOMER_ID,
+                        'X-Signature': signature
+                  }
+            });
 
-      if (!res.ok) { const t = await res.text().catch(()=>''); global.__vderr = { status: res.status, body: t.slice(0,300), url }; continue; }
+            if (!res.ok) { continue; }
             const data = await res.json();
-            results.push(...(data.keywordList || []));
+            const list = data.keywordList || [];
+            if (i === 0) { global.__vd1 = list.slice(0, 5); }
+            results.push(...list);
       }
       return results;
 }
@@ -180,7 +182,7 @@ module.exports = async (req, res) => {
             byNiche,
             byVolume,
             docApiEnabled: hasDocApi,
-            debug: { vd: global.__vd, sg: global.__sg, vderr: global.__vderr }
+            debug: { vd: global.__vd, sg: global.__sg, vderr: global.__vderr, vd1: global.__vd1 }
       });
       } catch (err) {
             res.status(500).json({ error: err.message || '알 수 없는 오류가 발생했어요.' });
