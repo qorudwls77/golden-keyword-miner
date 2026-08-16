@@ -171,6 +171,10 @@ module.exports = async (req, res) => {
             } else {
                   byNiche = withDocs.slice().sort((a, b) => b.volume - a.volume);
             }
+                  const originalEntry = withDocs.find(k => normalizeKey(k.keyword) === normalizeKey(keyword));
+                  if (originalEntry && !byNiche.some(k => normalizeKey(k.keyword) === normalizeKey(keyword))) {
+                                    byNiche = [originalEntry, ...byNiche];
+                  }
 
       const byVolume = withDocs.slice().sort((a, b) => b.volume - a.volume);
 
