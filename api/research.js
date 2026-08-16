@@ -31,7 +31,6 @@ async function fetchAutocomplete(keyword) {
             }
       });
 const bodyText = await res.text();
-      global.__lastAC = { status: res.status, ok: res.ok, body: bodyText.slice(0, 400) };
       if (!res.ok) return [];
       let data;
       try { data = JSON.parse(bodyText); } catch (e) { return []; }
@@ -118,10 +117,23 @@ module.exports = async (req, res) => {
       const hasDocApi = Boolean(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET);
 
       try {
-            const suggestions = await fetchAutocomplete(keyword);
+            let suggestions = await fetchAutocomplete(keyword);
+
+            if (suggestions.length < 5) {
+                  const rootWord = keyword.trim().split(/\s+/)[0];
+                  if (rootWord && rootWord !== keyword.trim()) {
+                        try {
+                              const broader = await fetchAutocomplete(rootWord);
+                              const seen = new Set(suggestions.map(s => s.toLowerCase()));
+                              for (const b of broader) {
+                                    if (!seen.has(b.toLowerCase())) { suggestions.push(b); seen.add(b.toLowerCase()); }
+                              }
+                        } catch (e) { /* 무시하고 진행 */ }
+                  }
+            }
 
       if (!suggestions.length) {
-            res.status(200).json({ keyword, recommended: null, byNiche: [], byVolume: [], docApiEnabled: hasDocApi, note: '연관검색어를 찾지 못했어요. 다른 표현으로 시도해보세요.', debug: global.__lastAC });
+            res.status(200).json({ keyword, recommended: null, byNiche: [], byVolume: [], docApiEnabled: hasDocApi, note: '연관검색어를 찾지 못했어요. 다른 표현으로 시도해보세요.' });
             return;
       }
 
