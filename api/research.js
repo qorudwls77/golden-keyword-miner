@@ -51,7 +51,7 @@ async function fetchVolumeForKeywords(keywords) {
             const method = 'GET';
             const path = '/keywordstool';
             const signature = sign(timestamp, method, path, process.env.NAVER_AD_SECRET_KEY);
-            const url = `https://api.naver.com${path}?hintKeywords=${encodeURIComponent(chunk.join(','))}&showDetail=1`;
+            const url = `https://api.naver.com${path}?hintKeywords=${chunk.map(k => encodeURIComponent(k)).join(',')}&showDetail=1`;
 
       const res = await fetch(url, {
             headers: {
