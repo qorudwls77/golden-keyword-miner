@@ -138,6 +138,8 @@ module.exports = async (req, res) => {
       }
 
       const volumeData = await fetchVolumeForKeywords(suggestions);
+            global.__vd = volumeData.slice(0, 5);
+            global.__sg = suggestions.slice(0, 5);
             const normalizeKey = s => String(s).replace(/\s+/g, '').toLowerCase();
             const rel = suggestions.map(sug => {
                   const match = volumeData.find(v => normalizeKey(v.relKeyword) === normalizeKey(sug));
@@ -177,7 +179,8 @@ module.exports = async (req, res) => {
             recommended: byNiche[0] || null,
             byNiche,
             byVolume,
-            docApiEnabled: hasDocApi
+            docApiEnabled: hasDocApi,
+            debug: { vd: global.__vd, sg: global.__sg }
       });
       } catch (err) {
             res.status(500).json({ error: err.message || '알 수 없는 오류가 발생했어요.' });
