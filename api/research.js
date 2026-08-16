@@ -65,7 +65,6 @@ async function fetchVolumeForKeywords(keywords) {
             if (!res.ok) { continue; }
             const data = await res.json();
             const list = data.keywordList || [];
-            if (i === 0) { global.__vd1 = list.slice(0, 5); }
             results.push(...list);
       }
       return results;
@@ -140,8 +139,6 @@ module.exports = async (req, res) => {
       }
 
       const volumeData = await fetchVolumeForKeywords(suggestions);
-            global.__vd = volumeData.slice(0, 5);
-            global.__sg = suggestions.slice(0, 5);
             const normalizeKey = s => String(s).replace(/\s+/g, '').toLowerCase();
             const rel = suggestions.map(sug => {
                   const match = volumeData.find(v => normalizeKey(v.relKeyword) === normalizeKey(sug));
@@ -182,7 +179,6 @@ module.exports = async (req, res) => {
             byNiche,
             byVolume,
             docApiEnabled: hasDocApi,
-            debug: { vd: global.__vd, sg: global.__sg, vderr: global.__vderr, vd1: global.__vd1 }
       });
       } catch (err) {
             res.status(500).json({ error: err.message || '알 수 없는 오류가 발생했어요.' });
