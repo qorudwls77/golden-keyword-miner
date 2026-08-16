@@ -62,7 +62,7 @@ async function fetchVolumeForKeywords(keywords) {
             }
       });
 
-      if (!res.ok) continue;
+      if (!res.ok) { const t = await res.text().catch(()=>''); global.__vderr = { status: res.status, body: t.slice(0,300), url }; continue; }
             const data = await res.json();
             results.push(...(data.keywordList || []));
       }
@@ -180,7 +180,7 @@ module.exports = async (req, res) => {
             byNiche,
             byVolume,
             docApiEnabled: hasDocApi,
-            debug: { vd: global.__vd, sg: global.__sg }
+            debug: { vd: global.__vd, sg: global.__sg, vderr: global.__vderr }
       });
       } catch (err) {
             res.status(500).json({ error: err.message || '알 수 없는 오류가 발생했어요.' });
